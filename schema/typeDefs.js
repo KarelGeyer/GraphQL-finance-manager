@@ -19,6 +19,8 @@ const typeDefs = gql`
         accountID: String!
         teamID: String
         transactions: [Transaction]
+        refreshToken: String
+        team: [User]
     }
 
     type Transaction {
@@ -33,9 +35,6 @@ const typeDefs = gql`
         person: User
     }
 
-    type Currencies {
-        value: Int
-    }
 
     type SumByCurrency {
         czk: String
@@ -47,11 +46,13 @@ const typeDefs = gql`
         users: [User!]!
         user: User!
 
-        transactions: [Transaction!]!
-        transactionsByMonth: [Transaction]
-        transaction: Transaction!
-
-        curencies: [Currencies]
+        transactions(auth: String): [Transaction!]!
+        transactionsByMonth(auth: String, date: String!): [Transaction]
+        transactionsByDay(auth: String, date: String!): [Transaction]
+        transaction(auth: String): Transaction!
+        
+        loans(auth: String): [Transaction]
+        loansByMonth(auth: String, date: String!): [Transaction]
     } 
 
     "*** Mutation ***"
@@ -60,9 +61,12 @@ const typeDefs = gql`
         deleteUser(user: UserInput): User
         updateUser(user: UserInput): User
 
-        createTransaction(transaction: TransactionInput): Transaction
-        updateTransaction(transaction: TransactionInput): Transaction
-        deleteTransaction(transaction: TransactionInput): Transaction
+        createTransaction(auth: String, transaction: TransactionInput): Transaction
+        updateTransaction(auth: String, transaction: TransactionInput): Transaction
+        deleteTransaction(auth: String, transaction: TransactionInput): Transaction
+        
+        refreshToken(user: UserInput!): String
+        login(user: UserInput!): String
     }
 
     "*** Inputs ***"
@@ -76,6 +80,7 @@ const typeDefs = gql`
         accountID: String!
         teamID: String
         newEmail: String
+        refreshToken: String
     }
 
     input TransactionInput {

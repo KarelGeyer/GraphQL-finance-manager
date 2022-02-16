@@ -1,26 +1,43 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import apolloServer from 'apollo-server'
+import apolloServer from 'apollo-server-express'
+import express from 'express';
 
 import typeDefs from './schema/typeDefs.js';
 import resolvers from './schema/resolvers/index.js';
 
-//* Import ApolloServer
-const { ApolloServer } = apolloServer
+const app = express()
+dotenv.config();
 
 //* instantiate new Apolloserver
+const { ApolloServer } = apolloServer
 const server = new ApolloServer({
 	typeDefs,
-	resolvers
+	resolvers,
+	context: ({ req }) => {
+		const auth = req.headers.authorization
+
+		return { auth };
+	}
+
 });
-dotenv.config();
+
 
 const PORT = process.env.PORT || 2000;
 const CONNECTION_URL = process.env.CONNECTION_URL
 
-mongoose.connect(CONNECTION_URL, {
-	useNewUrlParser: true,
-	useUnifiedTopology: true,
-})
-.then(() => server.listen(PORT, () => console.log(`Server is running and listening to ${PORT}`)))
-.catch((err) => console.log(err));
+const startApplication = async () => {
+	await server.start()
+	await mongoose.connect(CONNECTION_URL, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+	})
+		.then(console.log(`connected to the database`))
+		.catch((err) => console.error(err));
+
+	server.applyMiddleware({ app })
+
+	app.listen(PORT, () => console.log(`Server is running and listening to ${PORT}`));
+}
+
+startApplication();

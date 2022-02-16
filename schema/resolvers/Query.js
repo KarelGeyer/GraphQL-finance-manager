@@ -1,64 +1,99 @@
-import axios from "axios";
-
 import User from "../../models/UserModel.js"
 import Transaction from "../../models/TransactionModel.js"
 
+import { authenticate, formatDate } from '../helpers/index.js';
+
 const Query = {
-    //* User queries
+    //* User Queries
     users: async () => {
         const users = await User.find();
 
         return users;
     },
+
     user: async (_, args) => {
-        const {email} = args;
-        const user = await User.findOne({email: email});
+        const { email } = args;
+        const user = await User.findOne({ email: email });
 
         return user;
     },
 
+
+
     //* Transaction Queries
-    transactions: async () => {
+    transactions: async (_, args, context) => {
+        authenticate(context, args)
+
         const transactions = await Transaction.find()
 
         return transactions;
     },
-    transaction: async (_, args) => {
-        const {id} = args
+
+    transactionsByMonth: async (_, args, context) => {
+        authenticate(context, args)
+
+        const date = args.date;
+
+        const transactions = await Transaction.find();
+        const filteredTransactions = transactions.filter(transaction => {
+            const userDate = formatDate("month", date);
+
+            return formatDate("month", transaction.date) === userDate;
+        })
+
+        return filteredTransactions
+    },
+
+    transactionsByDay: async (_, args, context) => {
+        authenticate(context, args)
+
+        const date = args.date;
+        const transactions = await Transaction.find().byDay(date)
+
+        return transactions
+    },
+
+    transaction: async (_, args, context) => {
+        authenticate(context, args)
+
+        const { id } = args
         const transaction = await Transaction.findById(id)
 
         return transaction
     },
 
-    curencies: async () => {
-        let czkRate;
-        let eurRate
 
-        await axios.get(`https://free.currconv.com/api/v7/convert?q=EUR_CZK&compact=ultra&apiKey=836d0b8433d05fb1ce7a`)
-        .then(res => {
-            czkRate = {"value": Object.values(res.data)};
-        });
 
-        await axios.get(`https://free.currconv.com/api/v7/convert?q=CZK_EUR&compact=ultra&apiKey=836d0b8433d05fb1ce7a`)
-        .then(res => {
-            eurRate = {"value": Object.values(res.data)};
-        });
+    //* Loans Queries
+    loans: async (_, args, context) => {
+        authenticate(context, args)
 
-        //*** Testing the convetions ***//
-        //* convert from czk to eur
-        //* const test = 100 * eurRate[0]
-        //* console.log(test);
+        const transactions = await Transaction.find()
+        const loans = transactions.filter(loan => {
+            return loan.isLoan === true
+        })
 
-        //* convert from eur to czk
-        //* const test = 4.07 * czkRate[0]
-        //* console.log(test);
+        return loans
+    },
 
-        const array = [czkRate[0], eurRate[0]]
+    loansByMonth: async (_, args, context) => {
+        authenticate(context, args)
 
-        console.log(array)
+        const date = args.date;
 
-        return array
-    }
+        const transactions = await Transaction.find();
+        const filteredTransactions = transactions.filter(transaction => {
+            const userDate = formatDate("month", date);
+
+            return formatDate("month", transaction.date) === userDate;
+        })
+
+        const filteredLoans = filteredTransactions.filter(loan => {
+            return loan.isLoan === true
+        })
+
+        return filteredLoans
+    },
 }
 
 export default Query;
