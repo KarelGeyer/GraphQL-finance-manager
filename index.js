@@ -14,6 +14,9 @@ const { ApolloServer } = apolloServer
 const server = new ApolloServer({
 	typeDefs,
 	resolvers,
+	playground: true,
+	introspection: true,
+	tracing: true,
 	context: ({ req }) => {
 		const auth = req.headers.authorization
 
