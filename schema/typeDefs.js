@@ -15,8 +15,8 @@ const typeDefs = gql`
         password: String!
         email: String!
         phoneNumber: String
-        currency: Currency
-        accountID: String!
+        currency: Currency!
+        accountID: String
         teamID: String
         transactions: [Transaction]
         refreshToken: String
@@ -33,6 +33,7 @@ const typeDefs = gql`
         isLoan: Boolean!
         personId: String!
         person: User
+        teamId: String
     }
 
 
@@ -46,10 +47,10 @@ const typeDefs = gql`
         users: [User!]!
         user: User!
 
-        transactions(auth: String): [Transaction!]!
-        transactionsByMonth(auth: String, date: String!): [Transaction]
-        transactionsByDay(auth: String, date: String!): [Transaction]
-        transaction(auth: String): Transaction!
+        transactionsAll: [Transaction!]!
+        transactionsByMonth(date: String!): [Transaction]
+        transactionsByDay(date: String!): [Transaction]
+        transaction: Transaction!
         
         loans(auth: String): [Transaction]
         loansByMonth(auth: String, date: String!): [Transaction]
@@ -58,15 +59,22 @@ const typeDefs = gql`
     "*** Mutation ***"
     type Mutation {
         createUser(user: UserInput): User
-        deleteUser(user: UserInput): User
-        updateUser(user: UserInput): User
+        deleteUser(auth: String, user: UserInput): User
+        updateUser(auth: String, user: UserInput): User
 
-        createTransaction(auth: String, transaction: TransactionInput): Transaction
-        updateTransaction(auth: String, transaction: TransactionInput): Transaction
-        deleteTransaction(auth: String, transaction: TransactionInput): Transaction
+        createTransaction( 
+            transaction: TransactionInput)
+            : Transaction
+        updateTransaction(
+            transaction: TransactionInput)
+            : Transaction
+        deleteTransaction(
+            transaction: TransactionInput)
+            : Transaction
         
         refreshToken(user: UserInput!): String
         login(user: UserInput!): String
+        createTeamId(users: TeamId!): String
     }
 
     "*** Inputs ***"
@@ -77,21 +85,33 @@ const typeDefs = gql`
         email: String!
         phoneNumber: Int
         currency: Currency
-        accountID: String!
+        accountID: String
         teamID: String
         newEmail: String
+        newPassword: String
         refreshToken: String
     }
 
     input TransactionInput {
         id: ID
         name: String!
-        category: String!
+        category: Category!
         sum: Int!
         currency: Currency
         isLoan: Boolean
         personId: String!,
-        date: DateTime
+        date: DateTime,
+
+    }
+
+    input UserTransaction {
+        accountID: String,
+        teamID: String
+    }
+
+    input TeamId {
+        accountIDFirstUser: String
+        accountIDSecondUser: String
     }
 
     "*** Enums ***"

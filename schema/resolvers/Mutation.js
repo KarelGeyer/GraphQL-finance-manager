@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import User from "../../models/UserModel.js";
 import Transaction from "../../models/TransactionModel.js";
 
-import { authenticate, getDate, createAccountId } from '../helpers/index.js';
+import { authenticate, getDate, createAccountId, validate } from '../helpers/index.js';
 
 const { AuthenticationError } = apolloServer
 
@@ -16,12 +16,24 @@ const Mutation = {
         const accountId = createAccountId(user);
         user.accountID = accountId;
 
+        const saltRounds = 10;
+        const password = await bcrypt.hash(user.password, saltRounds)
+
+        if (!password) {
+            throw ("Something went wrong, please try again later or contact the admin #userCreation #1")
+        }
+        user.password = password;
+
+        if (!user.currency) {
+            user.currency = "EUR"
+        }
+
         try {
             const newUser = await new User(user);
             const savedUser = await newUser.save();
 
             if (!savedUser) {
-                throw ("user could not be created");
+                throw ("user could not be created #userCreation #2");
             }
 
             return savedUser;
@@ -30,9 +42,12 @@ const Mutation = {
         }
     },
 
-    deleteUser: async (_, args) => {
+    deleteUser: async (_, args, context) => {
         const { user } = args;
-        const { email, password } = user;
+        const { email } = user;
+
+        authenticate(context, args);
+        await validate(user);
 
         try {
             const thisUser = await User.findOneAndDelete({
@@ -59,7 +74,7 @@ const Mutation = {
         }
     },
 
-    updateUser: async (_, args) => {
+    updateUser: async (_, args, context) => {
         const { user } = args;
         const {
             name,
@@ -68,8 +83,15 @@ const Mutation = {
             email,
             phoneNumber,
             currency,
+            newPassword,
             newEmail,
         } = user;
+
+        authenticate(context, args);
+        await validate(user);
+
+        const saltRounds = 10;
+        const changedPassword = newPassword ? await bcrypt.hash(newPassword, saltRounds) : password
 
         try {
             const thisUser = await User.findOneAndUpdate({
@@ -77,10 +99,10 @@ const Mutation = {
             }, {
                 name: name && name,
                 surname: surname && surname,
-                password: password && password,
                 phoneNumber: phoneNumber && phoneNumber,
                 currency: currency && currency,
-                newEmail: newEmail && newEmail
+                newEmail: newEmail && newEmail,
+                password: changedPassword
             });
 
             if (!thisUser) {
@@ -98,12 +120,9 @@ const Mutation = {
     createTransaction: async (_, args, context) => {
         authenticate(context, args)
 
-        const { transaction, auth } = args;
+        const { transaction } = args;
         const { personId, name, sum, isLoan, currency, date } = transaction;
 
-        if (!auth) {
-            throw ('You do no have a permition to delete transaction')
-        }
 
         if (!personId || !name || !sum) {
             throw ("Transaction could not be saved, error #1");
@@ -138,12 +157,8 @@ const Mutation = {
     deleteTransaction: async (_, args, context) => {
         authenticate(context, args)
 
-        const { transaction, auth } = args;
+        const { transaction } = args;
         const { id } = transaction;
-
-        if (!auth) {
-            throw ('You do no have a permition to delete transaction')
-        }
 
         try {
             const deletedTransaction = await Transaction.findByIdAndDelete({ _id: id });
@@ -159,7 +174,7 @@ const Mutation = {
     },
 
     updateTransaction: async (_, args, context) => {
-        const { transaction, auth } = args;
+        const { transaction } = args;
         const {
             category,
             sum,
@@ -170,10 +185,6 @@ const Mutation = {
         } = transaction;
 
         authenticate(context, args)
-
-        if (!auth) {
-            throw ('You do no have a permition to delete transaction')
-        }
 
         try {
             const updatedTransaction = await Transaction.findByIdAndUpdate({
@@ -199,13 +210,9 @@ const Mutation = {
 
 
     login: async (_, args) => {
-        //* solve password
-
         const { user } = args;
-        const userExist = await User.find({ email: user.email });
-        if (!userExist) {
-            throw new AuthenticationError("Email or Password is wrong!")
-        }
+
+        await validate(user);
 
         const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
         const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
@@ -248,6 +255,35 @@ const Mutation = {
 
         return accessToken;
     },
+
+    createTeamId: async (_, args) => {
+        const { users } = args;
+        const { accountIDFirstUser, accountIDSecondUser } = users;
+
+        const teamID = `${accountIDFirstUser}-${accountIDSecondUser}`
+
+        const updateFirstUser = await User.findOneAndUpdate({
+            accountID: accountIDFirstUser
+        }, {
+            teamID: teamID
+        })
+
+        if (!updateFirstUser) {
+            throw ('Something went wrong, please try again or contant the admin #1')
+        }
+
+        const updateSecondUser = await User.findOneAndUpdate({
+            accountID: accountIDSecondUser
+        }, {
+            teamID: teamID
+        })
+
+        if (!updateSecondUser) {
+            throw ('Something went wrong, please try again or contant the admin #2')
+        }
+
+        return teamID
+    }
 }
 
 export default Mutation

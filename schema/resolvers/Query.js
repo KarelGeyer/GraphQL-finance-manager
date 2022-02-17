@@ -21,7 +21,7 @@ const Query = {
 
 
     //* Transaction Queries
-    transactions: async (_, args, context) => {
+    transactionsAll: async (_, args, context) => {
         authenticate(context, args)
 
         const transactions = await Transaction.find()

@@ -13,9 +13,11 @@ const Users = {
             return null
         }
 
-        const team = await User.find().where({ teamID: parent.teamID })
+        if (parent.teamID) {
+            const team = await User.find().where({ teamID: parent.teamID })
 
-        return team
+            return team
+        }
     }
 }
 
