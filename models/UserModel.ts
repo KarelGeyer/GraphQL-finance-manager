@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const UserModel = new mongoose.Schema({
   name: {
@@ -19,7 +19,7 @@ const UserModel = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    lowercase: true
+    lowercase: true,
   },
   phoneNumber: {
     type: String,
@@ -38,4 +38,4 @@ const UserModel = new mongoose.Schema({
   refreshToken: String,
 });
 
-export default mongoose.model('User', UserModel);
+export default mongoose.model("User", UserModel);

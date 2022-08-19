@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const TransactionModel = new mongoose.Schema({
   name: {
@@ -17,19 +17,18 @@ const TransactionModel = new mongoose.Schema({
     type: String,
   },
   isLoan: {
-    type: Boolean
+    type: Boolean,
   },
   accountId: {
-    type: String
+    type: String,
   },
   personId: {
-    type: String
-  }
+    type: String,
+  },
 });
 
-TransactionModel.query.byDay = async function (date) {
-
+TransactionModel.query.byDay = async function (date: any) {
   return this.where({ date: date });
-}
+};
 
-export default mongoose.model('Transaction', TransactionModel);
+export default mongoose.model("Transaction", TransactionModel);

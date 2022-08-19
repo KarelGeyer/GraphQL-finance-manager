@@ -1,4 +1,6 @@
-const getDate = (args, param) => {
+import { BaseTransaction } from "../../types/index";
+
+const getDate = (args: BaseTransaction, param: string): string => {
   const newDate = new Date();
 
   const day = newDate.getDate();
@@ -7,13 +9,13 @@ const getDate = (args, param) => {
 
   const month = getMonth > 9 ? getMonth : `0${getMonth}`;
 
-  const date = `${year}-${month}-${day}`
+  const date = `${year}-${month}-${day}`;
 
   if (param === "Transaction") {
-    args.date = date
+    args.date = date;
   }
 
-  return date
-}
+  return date;
+};
 
 export default getDate;
