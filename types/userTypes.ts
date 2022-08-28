@@ -19,3 +19,12 @@ export interface UpdateUser extends CompleteUser {
   newEmail: string;
   newPassword: string;
 }
+
+export interface Credentials {
+  email: string;
+  password: string;
+}
+
+export interface AccessToken {
+  accessToken: string;
+}

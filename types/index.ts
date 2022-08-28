@@ -1,4 +1,10 @@
-import { BaseUser, CompleteUser, UpdateUser } from "./userTypes";
+import {
+  BaseUser,
+  CompleteUser,
+  UpdateUser,
+  Credentials,
+  AccessToken,
+} from "./userTypes";
 import { Context, TeamIDCreation } from "./baseTypes";
 import { BaseTransaction } from "./transactionTypes";
 
@@ -9,4 +15,6 @@ export {
   CompleteUser,
   UpdateUser,
   BaseTransaction,
+  Credentials,
+  AccessToken,
 };

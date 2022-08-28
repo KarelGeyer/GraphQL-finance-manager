@@ -41,10 +41,14 @@ const typeDefs = gql`
     eur: String
   }
 
+  type AccessToken {
+    accessToken: String
+  }
+
   "*** Query ***"
   type Query {
     users: [User!]!
-    user: User!
+    user(email: String): User!
 
     transactionsAll: [Transaction!]!
     transactionsByMonth(date: String!): [Transaction]
@@ -66,7 +70,7 @@ const typeDefs = gql`
     deleteTransaction(transaction: TransactionInput): Transaction
 
     refreshToken(user: UserInput!): String
-    login(user: UserInput!): String
+    login(user: LoginCredentials!): AccessToken
     createTeamId(users: TeamId!): String
   }
 
@@ -99,6 +103,11 @@ const typeDefs = gql`
   input UserTransaction {
     accountID: String
     teamID: String
+  }
+
+  input LoginCredentials {
+    email: String!
+    password: String!
   }
 
   input TeamId {

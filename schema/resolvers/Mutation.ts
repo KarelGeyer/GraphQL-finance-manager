@@ -19,6 +19,8 @@ import {
   Context,
   TeamIDCreation,
   BaseTransaction,
+  Credentials,
+  AccessToken,
 } from "../../types/index";
 
 const { AuthenticationError } = apolloServer;
@@ -253,9 +255,8 @@ const Mutation = {
     }
   },
 
-  login: async (_: any, args: { user: CompleteUser }): Promise<string> => {
+  login: async (_: any, args: { user: BaseUser }): Promise<AccessToken> => {
     const { user } = args;
-
     await validate(user);
 
     const accessToken = jwt.sign(
@@ -284,7 +285,9 @@ const Mutation = {
       throw "Email or Password are wrong! Please try again or contact the admin";
     }
 
-    return accessToken;
+    return {
+      accessToken,
+    };
   },
 
   refreshToken: async (

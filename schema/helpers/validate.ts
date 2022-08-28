@@ -5,7 +5,6 @@ import { BaseUser } from "../../types/index";
 
 const validate = async (user: BaseUser): Promise<boolean> => {
   const foundUser: BaseUser[] = await User.find({ email: user.email });
-
   if (!foundUser || foundUser.length === 0) {
     throw new AuthenticationError(
       "Email or Password is wrong! #auth #validate #1"
