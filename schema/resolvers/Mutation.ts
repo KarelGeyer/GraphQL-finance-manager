@@ -20,7 +20,7 @@ import {
   TeamIDCreation,
   BaseTransaction,
   Credentials,
-  AccessToken,
+  RefreshToken,
 } from "../../types/index";
 
 const { AuthenticationError } = apolloServer;
@@ -160,9 +160,9 @@ const Mutation = {
     authenticate(context, args);
 
     const { transaction } = args;
-    const { personId, name, sum, isLoan, currency, date } = transaction;
+    const { name, sum, isLoan, currency, date } = transaction;
 
-    if (!personId || !name || !sum) {
+    if (!name || !sum) {
       throw "Transaction could not be saved, error #1";
     }
 
@@ -226,7 +226,7 @@ const Mutation = {
     context: Context
   ): Promise<BaseTransaction> => {
     const { transaction } = args;
-    const { category, sum, date, isLoan, name, id } = transaction;
+    const { category, sum, date, isLoan, name, currency, id } = transaction;
 
     authenticate(context, args);
 
@@ -242,6 +242,7 @@ const Mutation = {
             date: date && date,
             isLoan: isLoan && isLoan,
             name: name && name,
+            currency: currency && currency,
           }
         );
 
@@ -255,21 +256,16 @@ const Mutation = {
     }
   },
 
-  login: async (_: any, args: { user: BaseUser }): Promise<AccessToken> => {
+  login: async (_: any, args: { user: BaseUser }): Promise<RefreshToken> => {
     const { user } = args;
     await validate(user);
 
-    const accessToken = jwt.sign(
+    const refreshToken = jwt.sign(
       user,
       process.env.ACCESS_TOKEN_SECRET ? process.env.ACCESS_TOKEN_SECRET : "",
       {
         expiresIn: "1h",
       }
-    );
-
-    const refreshToken = jwt.sign(
-      user,
-      process.env.ACCESS_TOKEN_SECRET ? process.env.ACCESS_TOKEN_SECRET : ""
     );
 
     const updatedUser: CompleteUser | null = await User.findOneAndUpdate(
@@ -286,16 +282,14 @@ const Mutation = {
     }
 
     return {
-      accessToken,
+      refreshToken,
     };
   },
 
-  refreshToken: async (
-    _: any,
-    args: { user: CompleteUser }
-  ): Promise<string> => {
-    const { email } = args.user;
+  refreshToken: async (_: any, args: { email: String }): Promise<string> => {
+    const { email } = args;
     const user: CompleteUser[] = await User.find({ email: email });
+
     if (!user) {
       throw "No user was found";
     }
@@ -309,7 +303,7 @@ const Mutation = {
 
     jwt.verify(
       refreshToken,
-      process.env.REFRESH_TOKEN_SECRET ? process.env.REFRESH_TOKEN_SECRET : "",
+      process.env.ACCESS_TOKEN_SECRET ? process.env.ACCESS_TOKEN_SECRET : "",
       (err: any, user: any) => {
         if (err) {
           throw new AuthenticationError(
@@ -321,18 +315,26 @@ const Mutation = {
           user,
           process.env.REFRESH_TOKEN_SECRET
             ? process.env.REFRESH_TOKEN_SECRET
-            : "",
-          {
-            expiresIn: "20s",
-          }
+            : ""
         );
 
         accessToken = newAccessToken;
       }
     );
 
+    await User.findOneAndUpdate(
+      {
+        email,
+      },
+      {
+        refreshToken: refreshToken,
+      }
+    );
+
     // @ts-ignore
-    return accessToken;
+    return {
+      refreshToken,
+    };
   },
 
   createTeamId: async (

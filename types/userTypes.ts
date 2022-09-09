@@ -25,6 +25,6 @@ export interface Credentials {
   password: string;
 }
 
-export interface AccessToken {
-  accessToken: string;
+export interface RefreshToken {
+  refreshToken: string;
 }

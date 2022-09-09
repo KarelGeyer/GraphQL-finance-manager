@@ -41,8 +41,8 @@ const typeDefs = gql`
     eur: String
   }
 
-  type AccessToken {
-    accessToken: String
+  type RefreshToken {
+    refreshToken: String
   }
 
   "*** Query ***"
@@ -69,8 +69,8 @@ const typeDefs = gql`
     updateTransaction(transaction: TransactionInput): Transaction
     deleteTransaction(transaction: TransactionInput): Transaction
 
-    refreshToken(user: UserInput!): String
-    login(user: LoginCredentials!): AccessToken
+    refreshToken(email: String!): RefreshToken
+    login(user: LoginCredentials!): RefreshToken
     createTeamId(users: TeamId!): String
   }
 
@@ -96,7 +96,7 @@ const typeDefs = gql`
     sum: Int!
     currency: Currency
     isLoan: Boolean
-    personId: String!
+    personId: String
     date: DateTime
   }
 

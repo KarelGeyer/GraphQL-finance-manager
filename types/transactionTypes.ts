@@ -5,7 +5,7 @@ export interface BaseTransaction {
   sum: number;
   currency: string;
   isLoan: boolean;
-  personId: string;
+  personId?: string;
   date: string;
 
   save(): Promise<BaseTransaction>;

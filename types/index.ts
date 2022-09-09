@@ -3,7 +3,7 @@ import {
   CompleteUser,
   UpdateUser,
   Credentials,
-  AccessToken,
+  RefreshToken,
 } from "./userTypes";
 import { Context, TeamIDCreation } from "./baseTypes";
 import { BaseTransaction } from "./transactionTypes";
@@ -16,5 +16,5 @@ export {
   UpdateUser,
   BaseTransaction,
   Credentials,
-  AccessToken,
+  RefreshToken,
 };
