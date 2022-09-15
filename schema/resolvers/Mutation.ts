@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 
 import User from "../../models/UserModel.js";
 import Transaction from "../../models/TransactionModel.js";
+import Loan from "../../models/LoanModel.js";
 
 import {
   authenticate,
@@ -21,6 +22,7 @@ import {
   BaseTransaction,
   Credentials,
   RefreshToken,
+  BaseLoan,
 } from "../../types/index";
 
 const { AuthenticationError } = apolloServer;
@@ -111,7 +113,6 @@ const Mutation = {
     const {
       name,
       surname,
-      password,
       email,
       phoneNumber,
       currency,
@@ -122,10 +123,27 @@ const Mutation = {
     authenticate(context, args);
     await validate(user);
 
+    const currentUser = await User.findOne({ email: email });
+
+    if (!currentUser) {
+      throw "User was not found";
+    }
+
     const saltRounds = 10;
-    const changedPassword = newPassword
-      ? await bcrypt.hash(newPassword, saltRounds)
-      : password;
+
+    const changedPassword =
+      newPassword && (await bcrypt.hash(newPassword, saltRounds));
+
+    if (newEmail) {
+      const existingUser = await User.findOne({
+        email: newEmail,
+      });
+
+      if (existingUser) {
+        console.log(existingUser);
+        throw "This user already exist, please type in a new email";
+      }
+    }
 
     try {
       const thisUser: CompleteUser | null = await User.findOneAndUpdate(
@@ -137,8 +155,11 @@ const Mutation = {
           surname: surname && surname,
           phoneNumber: phoneNumber && phoneNumber,
           currency: currency && currency,
-          newEmail: newEmail && newEmail,
-          password: changedPassword,
+          email: newEmail !== "" ? newEmail : currentUser.email,
+          password:
+            changedPassword && changedPassword !== ""
+              ? changedPassword
+              : currentUser.password,
         }
       );
 
@@ -146,6 +167,7 @@ const Mutation = {
         throw "Something went wrong";
       }
 
+      console.log(user);
       return thisUser;
     } catch (err) {
       return err.message;
@@ -160,14 +182,10 @@ const Mutation = {
     authenticate(context, args);
 
     const { transaction } = args;
-    const { name, sum, isLoan, currency, date } = transaction;
+    const { name, sum, currency, date } = transaction;
 
     if (!name || !sum) {
       throw "Transaction could not be saved, error #1";
-    }
-
-    if (!isLoan) {
-      transaction.isLoan = false;
     }
 
     if (!currency) {
@@ -182,6 +200,7 @@ const Mutation = {
       const newTransaction: BaseTransaction = await new Transaction(
         transaction
       );
+
       const saveTransaction = await newTransaction.save();
 
       if (!saveTransaction) {
@@ -226,7 +245,7 @@ const Mutation = {
     context: Context
   ): Promise<BaseTransaction> => {
     const { transaction } = args;
-    const { category, sum, date, isLoan, name, currency, id } = transaction;
+    const { category, sum, date, name, currency, id } = transaction;
 
     authenticate(context, args);
 
@@ -240,7 +259,6 @@ const Mutation = {
             category: category && category,
             sum: sum && sum,
             date: date && date,
-            isLoan: isLoan && isLoan,
             name: name && name,
             currency: currency && currency,
           }
@@ -251,6 +269,109 @@ const Mutation = {
       }
 
       return updatedTransaction;
+    } catch (err) {
+      return err.message;
+    }
+  },
+
+  createLoan: async (
+    _: any,
+    args: { loan: BaseLoan },
+    context: Context
+  ): Promise<BaseLoan> => {
+    authenticate(context, args);
+
+    const { loan }: { loan: BaseLoan } = args;
+    const { name, sum, currency, date, creditorEmail, debtorEmail } = loan;
+
+    if (!name || !sum) {
+      throw "Loan could not be saved, error #1";
+    }
+
+    if (debtorEmail == "") {
+      throw "Debtor could not be found, error #1";
+    }
+
+    if (creditorEmail === "") {
+      throw "Loan could not be saved, isLoan was marked but no credtior was provided to connect this transaction to";
+    }
+
+    if (!currency) {
+      loan.currency = "EUR";
+    }
+
+    if (!date) {
+      getDate(loan, "Loan");
+    }
+
+    try {
+      const newLoan: BaseLoan = await new Loan(loan);
+
+      const saveLoan = await newLoan.save();
+
+      if (!saveLoan) {
+        throw "Transaction could not be saved, error #2";
+      }
+
+      return saveLoan;
+    } catch (err) {
+      return err.message;
+    }
+  },
+
+  deleteLoan: async (
+    _: any,
+    args: { id: string },
+    context: Context
+  ): Promise<BaseLoan> => {
+    authenticate(context, args);
+
+    const { id } = args;
+
+    try {
+      const deletedLoan: BaseLoan | null = await Loan.findByIdAndDelete({
+        _id: id,
+      });
+
+      if (!deletedLoan) {
+        throw "Transaction could not be deleted";
+      }
+
+      return deletedLoan;
+    } catch (err) {
+      return err.message;
+    }
+  },
+
+  updateLoan: async (
+    _: any,
+    args: { loan: BaseLoan },
+    context: Context
+  ): Promise<BaseLoan> => {
+    const { loan }: { loan: BaseLoan } = args;
+    const { id, name, sum, currency, date, isPayed } = loan;
+
+    authenticate(context, args);
+
+    try {
+      const updatedLoan: BaseLoan | null = await Transaction.findByIdAndUpdate(
+        {
+          _id: id,
+        },
+        {
+          sum: sum && sum,
+          date: date && date,
+          name: name && name,
+          currency: currency && currency,
+          isPayed: isPayed && isPayed,
+        }
+      );
+
+      if (!updatedLoan) {
+        throw "Transaction could not be updated";
+      }
+
+      return updatedLoan;
     } catch (err) {
       return err.message;
     }
@@ -339,40 +460,27 @@ const Mutation = {
 
   createTeamId: async (
     _: any,
-    args: { users: TeamIDCreation }
+    args: { userEmails: TeamIDCreation[]; teamId: string }
   ): Promise<string> => {
-    const { users } = args;
-    const { accountIDFirstUser, accountIDSecondUser } = users;
+    const { userEmails, teamId } = args;
 
-    const teamID = `${accountIDFirstUser}-${accountIDSecondUser}`;
+    if (!teamId) throw "Team Id is missing";
 
-    const updateFirstUser: CompleteUser | null = await User.findOneAndUpdate(
-      {
-        accountID: accountIDFirstUser,
-      },
-      {
-        teamID: teamID,
-      }
-    );
+    if (userEmails.length < 2)
+      throw "Not enough user email provided in order to create a team";
 
-    if (!updateFirstUser) {
-      throw "Something went wrong, please try again or contant the admin #1";
-    }
+    userEmails.forEach(async (email) => {
+      await User.findOneAndUpdate(
+        {
+          email: email,
+        },
+        {
+          teamID: teamId,
+        }
+      );
+    });
 
-    const updateSecondUser: CompleteUser | null = await User.findOneAndUpdate(
-      {
-        accountID: accountIDSecondUser,
-      },
-      {
-        teamID: teamID,
-      }
-    );
-
-    if (!updateSecondUser) {
-      throw "Something went wrong, please try again or contant the admin #2";
-    }
-
-    return teamID;
+    return teamId;
   },
 };
 

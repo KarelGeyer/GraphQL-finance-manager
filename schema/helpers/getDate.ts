@@ -1,6 +1,6 @@
-import { BaseTransaction } from "../../types/index";
+import { BaseLoan, BaseTransaction } from "../../types/index";
 
-const getDate = (args: BaseTransaction, param: string): string => {
+const getDate = (args: BaseTransaction | BaseLoan, param: string): string => {
   const newDate = new Date();
 
   const day = newDate.getDate();
@@ -11,7 +11,7 @@ const getDate = (args: BaseTransaction, param: string): string => {
 
   const date = `${year}-${month}-${day}`;
 
-  if (param === "Transaction") {
+  if (param === "Transaction" || param === "Loan") {
     args.date = date;
   }
 

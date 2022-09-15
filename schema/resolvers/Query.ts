@@ -1,8 +1,10 @@
 import User from "../../models/UserModel.js";
 import Transaction from "../../models/TransactionModel.js";
+import Loan from "../../models/LoanModel.js";
 
 import { authenticate, formatDate } from "../helpers/index.js";
 import {
+  BaseLoan,
   BaseTransaction,
   BaseUser,
   CompleteUser,
@@ -82,17 +84,10 @@ const Query = {
   },
 
   //* Loans Queries
-  loans: async (
-    _: any,
-    args: any,
-    context: Context
-  ): Promise<BaseTransaction[]> => {
+  loansAll: async (_: any, args: any, context: Context): Promise<any[]> => {
     authenticate(context, args);
 
-    const transactions: BaseTransaction[] = await Transaction.find();
-    const loans = transactions.filter((loan) => {
-      return loan.isLoan === true;
-    });
+    const loans: BaseLoan[] = await Loan.find();
 
     return loans;
   },
@@ -101,23 +96,39 @@ const Query = {
     _: any,
     args: any,
     context: Context
-  ): Promise<BaseTransaction[]> => {
+  ): Promise<BaseLoan[]> => {
     authenticate(context, args);
 
-    const date = args.date;
+    const date: string = args.date;
 
-    const transactions: BaseTransaction[] = await Transaction.find();
-    const filteredTransactions = transactions.filter((transaction) => {
+    const loans: BaseLoan[] = await Loan.find();
+    const filteredLoans: BaseLoan[] = loans.filter((loan: BaseLoan) => {
       const userDate = formatDate("month", date);
 
-      return formatDate("month", transaction.date) === userDate;
-    });
-
-    const filteredLoans = filteredTransactions.filter((loan) => {
-      return loan.isLoan === true;
+      //@ts-ignore
+      return formatDate("month", loan.date) === userDate;
     });
 
     return filteredLoans;
+  },
+
+  loansByDay: async (_: any, args: any, context: Context) => {
+    authenticate(context, args);
+
+    const date = args.date;
+    // @ts-ignore
+    const loansByDay: BaseLoan = await Loan.find().byDay(date);
+
+    return loansByDay;
+  },
+
+  loan: async (_: any, args: any, context: Context): Promise<any | null> => {
+    authenticate(context, args);
+
+    const { id } = args;
+    const loan: any | null = await Loan.findById(id);
+
+    return loan;
   },
 };
 

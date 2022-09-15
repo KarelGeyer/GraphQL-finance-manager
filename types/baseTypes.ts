@@ -3,6 +3,5 @@ export interface Context {
 }
 
 export interface TeamIDCreation {
-  accountIDFirstUser: String;
-  accountIDSecondUser: String;
+  email: string;
 }

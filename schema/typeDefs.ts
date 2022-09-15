@@ -19,6 +19,7 @@ const typeDefs = gql`
     accountID: String
     teamID: String
     transactions: [Transaction]
+    loans: [Loan]
     refreshToken: String
     team: [User]
   }
@@ -30,10 +31,23 @@ const typeDefs = gql`
     sum: Int!
     currency: Currency!
     date: DateTime!
-    isLoan: Boolean!
     personId: String!
     person: User
     teamId: String
+  }
+
+  type Loan {
+    id: ID!
+    name: String!
+    sum: Int!
+    currency: Currency!
+    date: DateTime!
+    creditorEmail: String
+    creditor: User
+    debtorEmail: String!
+    personId: String!
+    isPayed: Boolean!
+    debtor: User
   }
 
   type SumByCurrency {
@@ -55,23 +69,29 @@ const typeDefs = gql`
     transactionsByDay(date: String!): [Transaction]
     transaction: Transaction!
 
-    loans(auth: String): [Transaction]
-    loansByMonth(auth: String, date: String!): [Transaction]
+    loansAll: [Loan!]!
+    loansByMonth(date: String!): [Loan]
+    loansByDay(date: String!): [Loan]
+    loan: Loan!
   }
 
   "*** Mutation ***"
   type Mutation {
     createUser(user: UserInput): User
-    deleteUser(auth: String, user: UserInput): User
-    updateUser(auth: String, user: UserInput): User
+    deleteUser(user: UserInput): User
+    updateUser(user: UserInput): User
 
     createTransaction(transaction: TransactionInput): Transaction
     updateTransaction(transaction: TransactionInput): Transaction
     deleteTransaction(transaction: TransactionInput): Transaction
 
+    createLoan(loan: LoanInput): Loan
+    updateLoan(loan: LoanInput): Loan
+    deleteLoan(id: String): Loan
+
     refreshToken(email: String!): RefreshToken
     login(user: LoginCredentials!): RefreshToken
-    createTeamId(users: TeamId!): String
+    createTeamId(userEmails: [String], teamId: String): String
   }
 
   "*** Inputs ***"
@@ -89,13 +109,25 @@ const typeDefs = gql`
     refreshToken: String
   }
 
+  input LoanInput {
+    id: ID
+    name: String!
+    sum: Int!
+    currency: Currency!
+    date: DateTime
+    creditorEmail: String
+    debtorEmail: String!
+    personId: String!
+    isPayed: Boolean!
+  }
+
   input TransactionInput {
     id: ID
     name: String!
     category: Category!
     sum: Int!
     currency: Currency
-    isLoan: Boolean
+    creditorEmail: String
     personId: String
     date: DateTime
   }
