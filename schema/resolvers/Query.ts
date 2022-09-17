@@ -83,6 +83,18 @@ const Query = {
     return transaction;
   },
 
+  teamTransactions: async (
+    _: any,
+    args: any,
+    context: Context
+  ): Promise<any[] | null> => {
+    const { ids } = args;
+
+    const transactions = await Transaction.find({ personId: { $in: ids } });
+
+    return transactions;
+  },
+
   //* Loans Queries
   loansAll: async (_: any, args: any, context: Context): Promise<any[]> => {
     authenticate(context, args);
@@ -129,6 +141,18 @@ const Query = {
     const loan: any | null = await Loan.findById(id);
 
     return loan;
+  },
+
+  teamLoans: async (
+    _: any,
+    args: any,
+    context: Context
+  ): Promise<any[] | null> => {
+    const { ids } = args;
+
+    const loans = await Loan.find({ personId: { $in: ids } });
+
+    return loans;
   },
 };
 

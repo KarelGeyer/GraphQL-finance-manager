@@ -68,11 +68,13 @@ const typeDefs = gql`
     transactionsByMonth(date: String!): [Transaction]
     transactionsByDay(date: String!): [Transaction]
     transaction: Transaction!
+    teamTransactions(ids: [String]!): [Transaction]
 
     loansAll: [Loan!]!
     loansByMonth(date: String!): [Loan]
     loansByDay(date: String!): [Loan]
     loan: Loan!
+    teamLoans(ids: [String]!): [Loan]
   }
 
   "*** Mutation ***"

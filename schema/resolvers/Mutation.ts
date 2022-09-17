@@ -349,25 +349,24 @@ const Mutation = {
     context: Context
   ): Promise<BaseLoan> => {
     const { loan }: { loan: BaseLoan } = args;
-    const { id, name, sum, currency, date, isPayed } = loan;
+    const { id, sum, currency, date, isPayed } = loan;
 
     authenticate(context, args);
 
     try {
-      const updatedLoan: BaseLoan | null = await Transaction.findByIdAndUpdate(
+      const updatedLoan: BaseLoan | null = await Loan.findByIdAndUpdate(
         {
           _id: id,
         },
         {
           sum: sum && sum,
           date: date && date,
-          name: name && name,
           currency: currency && currency,
           isPayed: isPayed && isPayed,
         }
       );
 
-      if (!updatedLoan) {
+      if (!updatedLoan || updatedLoan == null) {
         throw "Transaction could not be updated";
       }
 

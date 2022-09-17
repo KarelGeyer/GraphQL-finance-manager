@@ -13,6 +13,8 @@ export interface CompleteUser extends BaseUser {
   accountID: string;
   teamID: string;
   refreshToken: string;
+  team: [CompleteUser];
+  transactions: [any];
 }
 
 export interface UpdateUser extends CompleteUser {
